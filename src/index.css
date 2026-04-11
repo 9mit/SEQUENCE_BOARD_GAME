@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --background: #030712; /* Deepest Midnight */
+    --background-alt: #090e1a;
+    --foreground: #f8fafc; /* Slate White */
+    --muted: rgba(248, 250, 252, 0.6);
+    --primary: #c5a059; /* Brushed Gold */
+    --primary-soft: #e2c275;
+    --accent-gold: var(--primary);
+    --surface: rgba(15, 23, 42, 0.4);
+    --surface-border: rgba(255, 255, 255, 0.08);
+    --surface-border-strong: rgba(197, 160, 89, 0.3);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-strong: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .premium-panel {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .premium-panel-strong {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid var(--surface-border-strong);
+    box-shadow: var(--shadow-strong);
+  }
+
+  .button-primary {
+    @apply relative inline-flex items-center justify-center px-8 py-4 font-bold text-slate-900 transition-all duration-300 transform rounded-full cursor-pointer;
+    background: linear-gradient(135deg, #c5a059 0%, #e2c275 100%);
+    box-shadow: 0 10px 20px -10px rgba(197, 160, 89, 0.5);
+  }
+
+  .button-primary:hover {
+    @apply -translate-y-0.5 scale-[1.02] brightness-110 shadow-lg;
+    box-shadow: 0 15px 30px -10px rgba(197, 160, 89, 0.6);
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center justify-center px-8 py-4 font-bold transition-all duration-300 rounded-full border border-slate-700 bg-slate-800/50 text-slate-200 cursor-pointer;
+  }
+
+  .button-secondary:hover {
+    @apply border-slate-500 bg-slate-700/50 text-white;
+  }
+
+  .button-ghost {
+    @apply inline-flex items-center justify-center p-2 rounded-full transition-all duration-300 text-slate-400 hover:bg-white/5 hover:text-white cursor-pointer;
+  }
+
+  .status-pill {
+    @apply px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-700 bg-slate-800/80 text-slate-400;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #c5a059 0%, #fde68a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .obsidian-input {
+    @apply w-full bg-slate-900/50 border border-slate-700 rounded-2xl px-6 py-4 text-white outline-none transition-all duration-300 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 placeholder:text-slate-500;
+  }
+
+  /* Responsive Utilities */
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .button-primary, .button-secondary {
+    @apply px-6 py-3 text-sm;
+  }
+}
+
