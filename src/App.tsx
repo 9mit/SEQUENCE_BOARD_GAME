@@ -16,6 +16,18 @@ export default function App() {
   const [playerId, setPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Handle auto-join via URL parameter
+    const params = new URLSearchParams(window.location.search);
+    const joinRoomId = params.get('join');
+    
+    if (joinRoomId && !roomId) {
+      // Auto-join using the room code from URL
+      // Store it so Home component can use it
+      sessionStorage.setItem('autoJoinRoom', joinRoomId);
+    }
+  }, []);
+
+  useEffect(() => {
     socket.on('gameState', (state: GameState) => {
       setGameState(state);
       setRoomId(state.roomId);

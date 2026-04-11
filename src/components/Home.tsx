@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io-client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, Users, Sparkles, ArrowRight, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -39,6 +39,19 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [showAIDifficulty, setShowAIDifficulty] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+
+  // Handle auto-join from URL
+  useEffect(() => {
+    const autoJoinRoom = sessionStorage.getItem('autoJoinRoom');
+    if (autoJoinRoom) {
+      setJoinRoomId(autoJoinRoom);
+      sessionStorage.removeItem('autoJoinRoom');
+      // Auto-fill a default name if not set
+      if (!playerName.trim()) {
+        setPlayerName('Guest');
+      }
+    }
+  }, []);
 
   const handleCreateRoom = (): void => {
     if (!playerName.trim()) {

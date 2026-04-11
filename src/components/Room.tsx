@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io-client';
 import { GameState } from '../shared/types';
 import { SUPPORTED_PLAYER_COUNTS } from '../shared/constants';
-import { Users, Copy, Play, Bot, Crown, X } from 'lucide-react';
+import { Users, Copy, Play, Bot, Crown, X, ArrowRight, LinkIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -38,6 +38,13 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
     setRemovingPlayerId(null);
   };
 
+  const generateShareLink = () => {
+    const baseUrl = window.location.origin;
+    const shareLink = `${baseUrl}?join=${gameState.roomId}`;
+    navigator.clipboard.writeText(shareLink);
+    toast.success('Share link copied to clipboard!');
+  };
+
   return (
     <div className="relative min-h-screen bg-[#030712] selection:bg-amber-500/30 selection:text-white">
       {/* Ambience */}
@@ -72,20 +79,29 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-                  <div className="rounded-3xl bg-slate-900/50 p-8 ring-1 ring-white/10">
+                  <div className="rounded-3xl bg-slate-900/50 p-8 ring-1 ring-white/10 space-y-4">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Access Key</span>
-                    <div className="mt-4 flex items-center justify-between">
-                       <code className="font-mono text-3xl sm:text-5xl font-bold tracking-[0.2em] text-white">
+                    <div className="flex items-center justify-between gap-3">
+                       <code className="font-mono text-2xl sm:text-4xl font-bold tracking-[0.2em] text-white">
                         {gameState.roomId}
                       </code>
                       <button
                         onClick={copyRoomCode}
-                        className="button-secondary px-6 py-2.5 text-xs h-fit"
+                        className="button-secondary px-6 py-2.5 text-xs h-fit whitespace-nowrap"
                       >
                         <Copy size={14} />
-                        Copy
+                        <span className="hidden sm:inline">Code</span>
                       </button>
                     </div>
+                    {isHost && (
+                      <button
+                        onClick={generateShareLink}
+                        className="button-secondary w-full py-3 text-xs gap-2"
+                      >
+                        <ArrowRight size={14} />
+                        <span>Share Link</span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="rounded-3xl bg-slate-900/30 p-8 ring-1 ring-white/5 space-y-4">
