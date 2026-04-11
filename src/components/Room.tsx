@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io-client';
 import { GameState } from '../shared/types';
 import { SUPPORTED_PLAYER_COUNTS } from '../shared/constants';
-import { Users, Copy, Play, Bot, Crown, X, ArrowRight, LinkIcon, ArrowLeft, Trash2 } from 'lucide-react';
+import { Users, Copy, Play, Bot, Crown, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -38,12 +38,6 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
     setRemovingPlayerId(null);
   };
 
-  const generateShareLink = () => {
-    const baseUrl = window.location.origin;
-    const shareLink = `${baseUrl}?join=${gameState.roomId}`;
-    navigator.clipboard.writeText(shareLink);
-    toast.success('Share link copied to clipboard!');
-  };
 
   const handleLeaveRoom = () => {
     socket.emit('leaveRoom', { roomId: gameState.roomId });
@@ -132,15 +126,6 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                         <span className="hidden sm:inline">Code</span>
                       </button>
                     </div>
-                    {isHost && (
-                      <button
-                        onClick={generateShareLink}
-                        className="button-secondary w-full py-3 text-xs gap-2"
-                      >
-                        <ArrowRight size={14} />
-                        <span>Share Link</span>
-                      </button>
-                    )}
                   </div>
 
                   <div className="rounded-3xl bg-slate-900/30 p-8 ring-1 ring-white/5 space-y-4">
