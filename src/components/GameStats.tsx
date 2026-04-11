@@ -131,7 +131,7 @@ export default function GameStats({ gameState, myPlayer, myTeam }: Props) {
                 <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                   <span className="font-mono text-slate-400">{player.hand.length}/{player.handLimit || '∞'}</span>
                   {player.handLimit && player.handLimit < 6 && (
-                    <AlertCircle size={12} className="text-amber-500" title="Hand limit penalty active" />
+                    <AlertCircle size={12} className="text-amber-500" aria-label="Hand limit penalty active" />
                   )}
                 </div>
               </div>
