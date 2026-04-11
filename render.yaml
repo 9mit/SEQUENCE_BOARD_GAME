@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sequence-board-game
+    plan: free
+    runtime: node
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: NODE_ENV=production node server.ts
+    healthCheckPath: /api/health
+    healthCheckInterval: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: LOG_LEVEL
+        value: info
