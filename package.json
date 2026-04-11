@@ -12,7 +12,7 @@
     "test": "tsx --test src/shared/__tests__/*.test.ts",
     "test:seq": "tsx --test src/shared/__tests__/sequenceEngine.test.ts",
     "test:rules": "tsx --test src/shared/__tests__/rules.test.ts",
-    "start": "npm run build && NODE_ENV=production node server.ts"
+    "start": "npm run build && NODE_ENV=production tsx server.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
