@@ -159,6 +159,12 @@ export interface TableTalkLoggedEvent extends BaseGameEvent {
   penalizedPlayerIds: string[];
 }
 
+export interface ForfeitEvent extends BaseGameEvent {
+  type: 'FORFEIT';
+  playerId: string;
+  team: TeamColor;
+}
+
 export type GameEvent =
   | CardPlayedEvent
   | ChipPlacedEvent
@@ -170,7 +176,8 @@ export type GameEvent =
   | CardDrawnEvent
   | DrawForfeitedEvent
   | DeckRecycledEvent
-  | TableTalkLoggedEvent;
+  | TableTalkLoggedEvent
+  | ForfeitEvent;
 
 export interface GameState {
   roomId: string;
@@ -195,6 +202,7 @@ export interface GameState {
   lastMove: LastMove | null;
   chat: ChatMessage[];
   events: GameEvent[];
+  disconnectGraceTransitions: Record<string, number>;
 }
 
 export interface EngineResult {

@@ -10,6 +10,7 @@ import {
   reconnectPlayer,
   rebindDisconnectedPlayer,
   startGame,
+  forfeitMatch,
 } from '../shared/gameLogic.js';
 import { ChatMessage, Difficulty, GameState } from '../shared/types.js';
 import {
@@ -26,6 +27,7 @@ import { logger } from './logger.js';
 
 const rooms = new Map<string, GameState>();
 const connections = new Map<string, { roomId: string; playerId: string }>();
+const reconnectTimers = new Map<string, NodeJS.Timeout>();
 
 // Rate limiting per socket - track events per player
 const socketEventCounts = new Map<string, { count: number; resetTime: number }>();
@@ -163,12 +165,23 @@ export function setupSocketHandlers(io: Server) {
         );
 
         if (rejoinTarget) {
+          // Clear any pending forfeit timer
+          const timer = reconnectTimers.get(rejoinTarget.id);
+          if (timer) {
+            clearTimeout(timer);
+            reconnectTimers.delete(rejoinTarget.id);
+            logger.info('Cleaned up reconnect timer for player', { playerId: rejoinTarget.id });
+          }
+
           const newPlayerId = createPlayerId();
           const rebound = rebindDisconnectedPlayer(existingState, playerName, newPlayerId);
           if (!rebound.ok) {
             socket.emit('error', rebound.error);
             return;
           }
+
+          // Clear grace period state
+          delete rebound.state.disconnectGraceTransitions[rejoinTarget.id];
 
           rooms.set(roomId, rebound.state);
           bindConnection(socket, roomId, newPlayerId);
@@ -371,6 +384,29 @@ export function setupSocketHandlers(io: Server) {
       }
     });
 
+    socket.on('forfeitMatch', (data: { roomId: string }) => {
+      try {
+        const connection = connections.get(socket.id);
+        if (!connection || connection.roomId !== data.roomId) return;
+
+        const roomId = validateRoomId(data.roomId);
+        const gameState = rooms.get(roomId);
+        if (!gameState || gameState.status !== 'playing') return;
+
+        const result = forfeitMatch(gameState, connection.playerId);
+        if (!result.ok) {
+          socket.emit('error', result.error);
+          return;
+        }
+
+        rooms.set(roomId, result.state);
+        emitGameState(io, roomId);
+        logger.info('Player forfeited match', { roomId, playerId: connection.playerId });
+      } catch (error) {
+        logger.warn('Forfeit validation error', { error: String(error) });
+      }
+    });
+
     socket.on('drawCard', (roomId: string) => {
       const connection = connections.get(socket.id);
       if (!connection || connection.roomId !== roomId) return;
@@ -447,6 +483,33 @@ export function setupSocketHandlers(io: Server) {
       const result = reconnectPlayer(gameState, connection.playerId, false);
       if (result.ok) {
         logger.info('Player marked as disconnected', { roomId: connection.roomId, playerId: connection.playerId });
+        
+        // If the game is in progress, start the 30s grace period timer
+        if (result.state.status === 'playing') {
+          const GRACE_PERIOD_MS = 30000;
+          const expiryTime = Date.now() + GRACE_PERIOD_MS;
+          
+          result.state.disconnectGraceTransitions[connection.playerId] = expiryTime;
+          
+          const timer = setTimeout(() => {
+            const currentState = rooms.get(connection.roomId);
+            if (currentState && currentState.status === 'playing') {
+              const forfeitResult = forfeitMatch(currentState, connection.playerId);
+              if (forfeitResult.ok) {
+                rooms.set(connection.roomId, forfeitResult.state);
+                emitGameState(io, connection.roomId);
+                logger.info('Player disqualified after grace period expiry', { 
+                  roomId: connection.roomId, 
+                  playerId: connection.playerId 
+                });
+              }
+            }
+            reconnectTimers.delete(connection.playerId);
+          }, GRACE_PERIOD_MS);
+
+          reconnectTimers.set(connection.playerId, timer);
+        }
+
         rooms.set(connection.roomId, result.state);
         emitGameState(io, connection.roomId);
       }

@@ -8,7 +8,7 @@ import Chat from './Chat';
 import GameStats from './GameStats';
 import HowToPlay from './HowToPlay';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Users, RefreshCw, BookOpen, Target, Sparkles } from 'lucide-react';
+import { Trophy, Users, RefreshCw, BookOpen, Target, Sparkles, LogOut, Clock, WifiOff } from 'lucide-react';
 
 interface Props {
   socket: Socket;
@@ -93,6 +93,16 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
     socket.emit('drawCard', gameState.roomId);
   };
 
+  const handleForfeit = () => {
+    if (confirm('Are you sure you want to leave? Your team will forfeit the match.')) {
+      socket.emit('forfeitMatch', { roomId: gameState.roomId });
+    }
+  };
+
+  const disconnectedPlayers = gameState.players.filter(
+    (p) => gameState.disconnectGraceTransitions[p.id] && !p.isAI
+  );
+
   return (
     <div className="relative min-h-screen bg-[#030712] overflow-x-hidden selection:bg-[#c5a059]/30">
       {/* Background Ambience */}
@@ -176,6 +186,14 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
               <button onClick={() => setShowHowToPlay(true)} className="button-secondary h-fit px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs">
                 <BookOpen size={12} className="sm:size-14" />
                 <span className="hidden sm:inline">Manual</span>
+              </button>
+              <button 
+                onClick={handleForfeit}
+                className="button-secondary h-fit px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs border-rose-500/20 text-rose-400 hover:bg-rose-500/10"
+                title="Forfeit Match"
+              >
+                <LogOut size={12} className="sm:size-14" />
+                <span className="hidden sm:inline">Leave</span>
               </button>
             </div>
          </div>
@@ -324,7 +342,57 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
           </aside>
        </div>
       </main>
+
+      {/* Disconnection Grace Period Overlay */}
+      <AnimatePresence>
+        {disconnectedPlayers.map((player) => (
+          <ReconnectOverlay key={player.id} player={player} graceEnd={gameState.disconnectGraceTransitions[player.id] || 0} />
+        ))}
+      </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function ReconnectOverlay({ player, graceEnd }: { player: any; graceEnd: number }) {
+  const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((graceEnd - Date.now()) / 1000)));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((graceEnd - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [graceEnd]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4"
+    >
+      <div className="premium-panel-strong rounded-3xl p-8 max-w-sm w-full text-center space-y-6 ring-1 ring-amber-500/30">
+        <div className="flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-rose-500/20 blur-2xl rounded-full animate-pulse" />
+            <WifiOff size={48} className="text-rose-500 relative" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-display text-white">{player.name} Disconnected</h2>
+          <p className="text-slate-400 text-sm">
+            Waiting for strategic reconnection. If they do not return within the grace period, the match will forfeit.
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-4 bg-slate-950/50 py-4 rounded-2xl border border-white/5">
+          <Clock size={20} className="text-[#c5a059]" />
+          <span className="text-3xl font-mono font-black text-[#c5a059] tabular-nums">
+            {timeLeft}s
+          </span>
+        </div>
+      </div>
+    </motion.div>
   );
 }

@@ -28,6 +28,7 @@ import {
   SequenceLine,
   TeamColor,
   TurnEndedEvent,
+  ForfeitEvent,
 } from './types.js';
 
 const DIRECTION_DEFINITIONS: Array<{ direction: SequenceDirection; dr: number; dc: number }> = [
@@ -99,6 +100,7 @@ export function createRoomState(params: { roomId: string; host: LobbyPlayerInput
     lastMove: null,
     chat: [],
     events: [],
+    disconnectGraceTransitions: {},
   });
 }
 
@@ -132,6 +134,43 @@ export function reconnectPlayer(state: GameState, playerId: string, connected: b
 
   player.connected = connected;
   return success(syncDerivedState(nextState), []);
+}
+
+export function forfeitMatch(state: GameState, playerId: string): EngineResult {
+  if (state.status !== 'playing' || state.winner) {
+    return failure(state, 'The game is not in a state that can be forfeited.');
+  }
+
+  const player = state.players.find((entry) => entry.id === playerId);
+  if (!player) {
+    return failure(state, 'Player not found.');
+  }
+
+  const nextState = cloneState(state);
+  const events: GameEvent[] = [];
+
+  const opposingTeams = nextState.teams.filter((team) => team !== player.team);
+  const winnerTeam = opposingTeams[0] || player.team;
+
+  nextState.status = 'finished';
+  nextState.winner = winnerTeam;
+  nextState.currentTurn = null;
+  nextState.currentTurnIndex = -1;
+  nextState.pendingDrawPlayerId = null;
+
+  appendEvent<ForfeitEvent>(nextState, events, {
+    type: 'FORFEIT',
+    playerId,
+    team: player.team,
+  });
+
+  appendEvent(nextState, events, {
+    type: 'GAME_WON',
+    team: winnerTeam,
+    sequenceIds: [],
+  });
+
+  return success(syncDerivedState(nextState), events);
 }
 
 export function rebindDisconnectedPlayer(state: GameState, playerName: string, newPlayerId: string): EngineResult {
@@ -897,6 +936,7 @@ function syncDerivedState(state: GameState): GameState {
   state.discardPiles = Object.fromEntries(state.players.map((player) => [player.id, state.discardPiles[player.id] ?? []]));
   state.discardPile = state.players.flatMap((player) => state.discardPiles[player.id] ?? []);
   state.currentTurnIndex = getPlayerIndex(state.players, state.currentTurn);
+  state.disconnectGraceTransitions = state.disconnectGraceTransitions || {};
   return state;
 }
 

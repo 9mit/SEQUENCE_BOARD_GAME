@@ -16,6 +16,7 @@ export {
   reconnectPlayer,
   rebindDisconnectedPlayer,
   startGame,
+  forfeitMatch,
 } from './sequenceEngine.js';
 
 export type { LegalAction, TableTalkDiscard } from './sequenceEngine.js';
