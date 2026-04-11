@@ -50,8 +50,8 @@ export function validateCardId(cardId: unknown): string {
 
   const trimmed = cardId.trim();
 
-  // Card IDs should follow pattern: "SUIT_VALUE" e.g., "H_A", "D_K"
-  if (!/^[CDHS]_[A-Z0-9]+$/.test(trimmed)) {
+  // Card IDs should follow pattern: "DECK_INDEX-ORDER-VALUE_SUIT" e.g., "0-12-10H", "1-52-AS"
+  if (!/^\d+-\d+-(10|[2-9JQKA])[HDCS]$/.test(trimmed)) {
     throw new Error('Invalid card ID format');
   }
 
@@ -65,8 +65,8 @@ export function validateSpaceId(spaceId: unknown): string {
 
   const trimmed = spaceId.trim();
 
-  // Space IDs should be numeric coordinates or "FREE"
-  if (!/^(\d{1,2}_\d{1,2}|FREE)$/.test(trimmed)) {
+  // Space IDs should be numeric coordinates e.g., "0-0", "9-9"
+  if (!/^\d{1,2}-\d{1,2}$/.test(trimmed)) {
     throw new Error('Invalid space ID format');
   }
 
