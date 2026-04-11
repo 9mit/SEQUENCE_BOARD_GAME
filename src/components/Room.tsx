@@ -111,9 +111,9 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
 
               <div className="space-y-6">
                  <div className="space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Private Assembly</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Waiting Room</span>
                   <h1 className="font-display text-3xl leading-tight text-white sm:text-5xl lg:text-6xl">
-                    Prepare for <span className="text-gradient">Engagement.</span>
+                    Wait for <span className="text-gradient">Players.</span>
                   </h1>
                 </div>
 
@@ -144,7 +144,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                   </div>
 
                   <div className="rounded-3xl bg-slate-900/30 p-8 ring-1 ring-white/5 space-y-4">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Table Brief</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Game Info</span>
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Host</span>
@@ -160,7 +160,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
 
                 <div className="space-y-6 pt-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="font-display text-2xl text-white">The Roster</h2>
+                    <h2 className="font-display text-2xl text-white">Players</h2>
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Auto-balanced Teams</span>
                   </div>
 
@@ -224,7 +224,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
              <div className="space-y-4">
                 <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Control Deck</span>
                 <h3 className="font-display text-2xl text-white">
-                  {isHost ? "Authorize Launch" : "Synchronizing Status"}
+                  {isHost ? "Start Game" : "Waiting for Host"}
                 </h3>
                 <p className="text-sm leading-relaxed text-slate-500">
                   {isHost 
@@ -260,7 +260,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                       className="button-primary w-full py-5 gap-3 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
                     >
                       <Play size={18} fill="currentColor" />
-                      <span>Launch Engagement</span>
+                      <span>Play Now</span>
                     </button>
                     {!canStart && (
                       <p className="text-center text-[10px] text-slate-600 uppercase tracking-widest leading-relaxed">
@@ -273,7 +273,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
               ) : (
                 <div className="flex items-center gap-4 rounded-2xl bg-slate-900/50 p-6 ring-1 ring-white/5 text-sm text-slate-400">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#c5a059]/30 border-t-[#c5a059]" />
-                  <span>Awaiting Host Authorization...</span>
+                  <span>Waiting for Host...</span>
                 </div>
               )}
             </div>

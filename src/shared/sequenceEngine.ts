@@ -172,7 +172,7 @@ export function startGame(state: GameState): EngineResult {
   const teamCount = getTeamCountForPlayers(nextState.players.length);
   const dealtPlayers = rebalancePlayers(nextState.players, teamCount).map((player) => ({
     ...player,
-    hand: [],
+    hand: [] as Card[],
     handLimit: cardsPerPlayer,
     missedDraws: 0,
   }));

@@ -4,10 +4,31 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { setupSocketHandlers } from "./src/server/socket.js";
 import { logger } from "./src/server/logger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Rate limiters for different endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => process.env.NODE_ENV !== "production", // Skip rate limiting in development
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // stricter limit for authentication endpoints
+  message: "Too many requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV !== "production",
+});
 
 async function startServer() {
   const app = express();
@@ -15,24 +36,65 @@ async function startServer() {
   const io = new Server(server, {
     cors: {
       origin: process.env.NODE_ENV === "production" ? false : "*",
-      methods: ["GET", "POST"]
-    }
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+    transports: ["websocket", "polling"], // Prefer websocket for security
+    maxHttpBufferSize: 1e5, // 100KB - prevent large payloads
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   const PORT = process.env.PORT || 3000;
 
-  app.use(express.json());
+  // Apply Helmet for comprehensive security headers
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'nonce-random'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "wss:", "ws:"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+      hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
+      },
+      noSniff: true,
+      xssFilter: true,
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    })
+  );
 
-  // Security headers middleware
-  app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    if (process.env.NODE_ENV === "production") {
-      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    }
-    next();
-  });
+  // Request size limits
+  app.use(express.json({ limit: "10kb" }));
+  app.use(express.urlencoded({ limit: "10kb" }));
+
+  // Apply rate limiting to all requests
+  app.use(generalLimiter);
+
+  // Trust proxy for accurate IP addresses
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
+
+  // HTTPS redirect middleware (for production)
+  if (process.env.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      if (req.header("x-forwarded-proto") !== "https") {
+        res.redirect(`https://${req.header("host")}${req.url}`);
+      } else {
+        next();
+      }
+    });
+  }
 
   // Request logging middleware
   app.use((req, res, next) => {
@@ -45,8 +107,18 @@ async function startServer() {
   });
 
   // API routes
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", strictLimiter, (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Security: Prevent cache of sensitive endpoints
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+    next();
   });
 
   // Setup Socket.io handlers

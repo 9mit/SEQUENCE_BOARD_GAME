@@ -12,137 +12,206 @@ import {
   startGame,
 } from '../shared/gameLogic.js';
 import { ChatMessage, Difficulty, GameState } from '../shared/types.js';
+import {
+  validatePlayerName,
+  validateRoomId,
+  validateCardId,
+  validateSpaceId,
+  validateDifficulty,
+  validateChatMessage,
+  validatePlayerId,
+} from './validation.js';
 
 import { logger } from './logger.js';
 
 const rooms = new Map<string, GameState>();
 const connections = new Map<string, { roomId: string; playerId: string }>();
 
+// Rate limiting per socket - track events per player
+const socketEventCounts = new Map<string, { count: number; resetTime: number }>();
+const EVENT_LIMIT = 100; // Max events per socket window
+const TIME_WINDOW = 60000; // 1 minute window
+
+function checkRateLimit(socketId: string): boolean {
+  const now = Date.now();
+  const record = socketEventCounts.get(socketId);
+
+  if (!record || now > record.resetTime) {
+    // Reset or create new record
+    socketEventCounts.set(socketId, { count: 1, resetTime: now + TIME_WINDOW });
+    return true;
+  }
+
+  if (record.count >= EVENT_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
 export function setupSocketHandlers(io: Server) {
   io.on('connection', (socket: Socket) => {
     logger.debug('Client connected', { socketId: socket.id });
 
     socket.on('createRoom', (data: { playerName: string }) => {
-      const roomId = uuidv4().substring(0, 6).toUpperCase();
-      const playerId = createPlayerId();
-      const gameState = createRoomState({
-        roomId,
-        host: {
-          id: playerId,
-          name: data.playerName,
-          connected: true,
-        },
-      });
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', 'Rate limit exceeded');
+        return;
+      }
 
-      rooms.set(roomId, gameState);
-      bindConnection(socket, roomId, playerId);
-      socket.join(roomId);
-      socket.emit('playerAssigned', playerId);
-      socket.emit('roomCreated', roomId);
-      emitGameState(io, roomId);
-      logger.info('Room created', { roomId, hostName: data.playerName });
+      try {
+        const playerName = validatePlayerName(data.playerName);
+        const roomId = uuidv4().substring(0, 6).toUpperCase();
+        const playerId = createPlayerId();
+        const gameState = createRoomState({
+          roomId,
+          host: {
+            id: playerId,
+            name: playerName,
+            connected: true,
+          },
+        });
+
+        rooms.set(roomId, gameState);
+        bindConnection(socket, roomId, playerId);
+        socket.join(roomId);
+        socket.emit('playerAssigned', playerId);
+        socket.emit('roomCreated', roomId);
+        emitGameState(io, roomId);
+        logger.info('Room created', { roomId, hostName: playerName });
+      } catch (error) {
+        socket.emit('error', error instanceof Error ? error.message : 'Failed to create room');
+        logger.warn('Room creation failed', { error: error instanceof Error ? error.message : String(error) });
+      }
     });
 
     socket.on('createSinglePlayerRoom', (data: { playerName: string; difficulty: Difficulty }) => {
-      const roomId = uuidv4().substring(0, 6).toUpperCase();
-      const humanId = createPlayerId();
-      const aiId = createPlayerId();
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', 'Rate limit exceeded');
+        return;
+      }
 
-      const initialState = createRoomState({
-        roomId,
-        host: {
-          id: humanId,
-          name: data.playerName,
+      try {
+        const playerName = validatePlayerName(data.playerName);
+        const difficulty = validateDifficulty(data.difficulty) as Difficulty;
+        const roomId = uuidv4().substring(0, 6).toUpperCase();
+        const humanId = createPlayerId();
+        const aiId = createPlayerId();
+
+        const initialState = createRoomState({
+          roomId,
+          host: {
+            id: humanId,
+            name: playerName,
+            connected: true,
+          },
+        });
+
+        const withAi = addPlayerToRoom(initialState, {
+          id: aiId,
+          name: `AI (${difficulty})`,
           connected: true,
-        },
-      });
+          isAI: true,
+          aiDifficulty: difficulty,
+        });
 
-      const withAi = addPlayerToRoom(initialState, {
-        id: aiId,
-        name: `AI (${data.difficulty})`,
-        connected: true,
-        isAI: true,
-        aiDifficulty: data.difficulty,
-      });
-
-      if (!withAi.ok) {
-        socket.emit('error', withAi.error);
-        return;
-      }
-
-      const started = startGame(withAi.state);
-      if (!started.ok) {
-        socket.emit('error', started.error);
-        return;
-      }
-
-      rooms.set(roomId, started.state);
-      bindConnection(socket, roomId, humanId);
-      socket.join(roomId);
-      socket.emit('playerAssigned', humanId);
-      socket.emit('roomCreated', roomId);
-      emitGameState(io, roomId);
-      void handleAIChain(io, roomId);
-    });
-
-    socket.on('joinRoom', (data: { roomId: string; playerName: string }) => {
-      const roomId = data.roomId.toUpperCase();
-      const existingState = rooms.get(roomId);
-
-      if (!existingState) {
-        socket.emit('error', 'Room not found');
-        return;
-      }
-
-      const rejoinTarget = existingState.players.find(
-        (player) => !player.connected && player.name.trim().toLowerCase() === data.playerName.trim().toLowerCase(),
-      );
-
-      if (rejoinTarget) {
-        const newPlayerId = createPlayerId();
-        const rebound = rebindDisconnectedPlayer(existingState, data.playerName, newPlayerId);
-        if (!rebound.ok) {
-          socket.emit('error', rebound.error);
+        if (!withAi.ok) {
+          socket.emit('error', withAi.error);
           return;
         }
 
-        rooms.set(roomId, rebound.state);
-        bindConnection(socket, roomId, newPlayerId);
+        const started = startGame(withAi.state);
+        if (!started.ok) {
+          socket.emit('error', started.error);
+          return;
+        }
+
+        rooms.set(roomId, started.state);
+        bindConnection(socket, roomId, humanId);
         socket.join(roomId);
-        socket.emit('playerAssigned', newPlayerId);
+        socket.emit('playerAssigned', humanId);
+        socket.emit('roomCreated', roomId);
         emitGameState(io, roomId);
+        logger.info('Single player room created', { roomId, humanName: playerName, difficulty });
+        void handleAIChain(io, roomId);
+      } catch (error) {
+        socket.emit('error', error instanceof Error ? error.message : 'Failed to create single player room');
+        logger.warn('Single player room creation failed', { error: error instanceof Error ? error.message : String(error) });
+      }
+    });
+
+    socket.on('joinRoom', (data: { roomId: string; playerName: string }) => {
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', 'Rate limit exceeded');
         return;
       }
 
-      if (existingState.status !== 'waiting') {
-        socket.emit('error', 'Game already started');
-        return;
+      try {
+        const roomId = validateRoomId(data.roomId);
+        const playerName = validatePlayerName(data.playerName);
+        const existingState = rooms.get(roomId);
+
+        if (!existingState) {
+          socket.emit('error', 'Room not found');
+          logger.warn('Join room failed - room not found', { roomId });
+          return;
+        }
+
+        const rejoinTarget = existingState.players.find(
+          (player) => !player.connected && player.name.trim().toLowerCase() === playerName.trim().toLowerCase(),
+        );
+
+        if (rejoinTarget) {
+          const newPlayerId = createPlayerId();
+          const rebound = rebindDisconnectedPlayer(existingState, playerName, newPlayerId);
+          if (!rebound.ok) {
+            socket.emit('error', rebound.error);
+            return;
+          }
+
+          rooms.set(roomId, rebound.state);
+          bindConnection(socket, roomId, newPlayerId);
+          socket.join(roomId);
+          socket.emit('playerAssigned', newPlayerId);
+          emitGameState(io, roomId);
+          logger.info('Player rejoined room', { roomId, playerName });
+          return;
+        }
+
+        if (existingState.status !== 'waiting') {
+          socket.emit('error', 'Game already started');
+          return;
+        }
+
+        if (existingState.players.some((player) => player.name.trim().toLowerCase() === playerName.trim().toLowerCase())) {
+          socket.emit('error', 'A player with that name is already seated.');
+          return;
+        }
+
+        const playerId = createPlayerId();
+        const added = addPlayerToRoom(existingState, {
+          id: playerId,
+          name: playerName,
+          connected: true,
+        });
+
+        if (!added.ok) {
+          logger.warn('Failed to join room', { roomId, playerName, error: added.error });
+          socket.emit('error', added.error);
+          return;
+        }
+
+        logger.info('Player joined room', { roomId, playerName, playerId });
+        rooms.set(roomId, added.state);
+        bindConnection(socket, roomId, playerId);
+        socket.join(roomId);
+        socket.emit('playerAssigned', playerId);
+        emitGameState(io, roomId);
+      } catch (error) {
+        socket.emit('error', error instanceof Error ? error.message : 'Failed to join room');
+        logger.warn('Join room validation error', { error: error instanceof Error ? error.message : String(error) });
       }
-
-      if (existingState.players.some((player) => player.name.trim().toLowerCase() === data.playerName.trim().toLowerCase())) {
-        socket.emit('error', 'A player with that name is already seated.');
-        return;
-      }
-
-      const playerId = createPlayerId();
-      const added = addPlayerToRoom(existingState, {
-        id: playerId,
-        name: data.playerName,
-        connected: true,
-      });
-
-      if (!added.ok) {
-        logger.warn('Failed to join room', { roomId, playerName: data.playerName, error: added.error });
-        socket.emit('error', added.error);
-        return;
-      }
-
-      logger.info('Player joined room', { roomId, playerName: data.playerName, playerId });
-      rooms.set(roomId, added.state);
-      bindConnection(socket, roomId, playerId);
-      socket.join(roomId);
-      socket.emit('playerAssigned', playerId);
-      emitGameState(io, roomId);
     });
 
     socket.on('addAI', (data: { roomId: string; difficulty: Difficulty }) => {
@@ -263,24 +332,43 @@ export function setupSocketHandlers(io: Server) {
     });
 
     socket.on('makeMove', (data: { roomId: string; cardId: string; spaceId?: string }) => {
-      const connection = connections.get(socket.id);
-      if (!connection || connection.roomId !== data.roomId) return;
-
-      const gameState = rooms.get(data.roomId);
-      if (!gameState) return;
-
-      const result = data.spaceId
-        ? playCard(gameState, connection.playerId, data.cardId, data.spaceId)
-        : declareDeadCard(gameState, connection.playerId, data.cardId);
-
-      if (!result.ok) {
-        socket.emit('error', result.error);
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', 'Rate limit exceeded');
         return;
       }
 
-      rooms.set(data.roomId, result.state);
-      emitGameState(io, data.roomId);
-      void handleAIChain(io, data.roomId);
+      try {
+        const connection = connections.get(socket.id);
+        if (!connection || connection.roomId !== data.roomId) {
+          socket.emit('error', 'Invalid connection or room');
+          return;
+        }
+
+        const roomId = validateRoomId(data.roomId);
+        const cardId = validateCardId(data.cardId);
+        const gameState = rooms.get(roomId);
+
+        if (!gameState) {
+          socket.emit('error', 'Room not found');
+          return;
+        }
+
+        const result = data.spaceId
+          ? playCard(gameState, connection.playerId, cardId, validateSpaceId(data.spaceId))
+          : declareDeadCard(gameState, connection.playerId, cardId);
+
+        if (!result.ok) {
+          socket.emit('error', result.error);
+          return;
+        }
+
+        rooms.set(roomId, result.state);
+        emitGameState(io, roomId);
+        void handleAIChain(io, roomId);
+      } catch (error) {
+        socket.emit('error', error instanceof Error ? error.message : 'Invalid move');
+        logger.warn('Move validation error', { error: error instanceof Error ? error.message : String(error) });
+      }
     });
 
     socket.on('drawCard', (roomId: string) => {
@@ -302,29 +390,46 @@ export function setupSocketHandlers(io: Server) {
     });
 
     socket.on('chatMessage', (data: { roomId: string; text: string }) => {
-      const connection = connections.get(socket.id);
-      const gameState = rooms.get(data.roomId);
-      if (!connection || !gameState) return;
+      if (!checkRateLimit(socket.id)) {
+        socket.emit('error', 'Rate limit exceeded - too many messages');
+        return;
+      }
 
-      const player = gameState.players.find((entry) => entry.id === connection.playerId);
-      if (!player) return;
+      try {
+        const connection = connections.get(socket.id);
+        const roomId = validateRoomId(data.roomId);
+        const gameState = rooms.get(roomId);
 
-      // Basic sanitization and length limit
-      const sanitizedText = data.text.trim().substring(0, 500).replace(/[<>]/g, '');
-      if (!sanitizedText) return;
+        if (!connection || !gameState) {
+          socket.emit('error', 'Invalid connection or room');
+          return;
+        }
 
-      const message: ChatMessage = {
-        id: uuidv4(),
-        senderId: player.id,
-        senderName: player.name,
-        text: sanitizedText,
-        timestamp: Date.now(),
-      };
+        const player = gameState.players.find((entry) => entry.id === connection.playerId);
+        if (!player) {
+          socket.emit('error', 'Player not found in room');
+          return;
+        }
 
-      gameState.chat.push(message);
-      io.to(data.roomId).emit('chatMessage', message);
-      emitGameState(io, data.roomId);
-      logger.debug('Chat message sent', { roomId: data.roomId, senderId: player.id });
+        // Validate and sanitize chat message
+        const sanitizedText = validateChatMessage(data.text);
+
+        const message: ChatMessage = {
+          id: uuidv4(),
+          senderId: player.id,
+          senderName: player.name,
+          text: sanitizedText,
+          timestamp: Date.now(),
+        };
+
+        gameState.chat.push(message);
+        io.to(roomId).emit('chatMessage', message);
+        emitGameState(io, roomId);
+        logger.debug('Chat message sent', { roomId, senderId: player.id });
+      } catch (error) {
+        socket.emit('error', error instanceof Error ? error.message : 'Failed to send message');
+        logger.warn('Chat message validation error', { error: error instanceof Error ? error.message : String(error) });
+      }
     });
 
     socket.on('disconnect', () => {

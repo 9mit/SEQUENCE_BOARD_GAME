@@ -163,19 +163,19 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
           >
             <div className="space-y-8">
               <div className="space-y-2">
-                <h2 className="font-display text-3xl text-white">Entry Protocol</h2>
+                <h2 className="font-display text-3xl text-white">Let's Play</h2>
                 <p className="text-sm text-slate-500">Secure your seat at the strategy table.</p>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Identity</label>
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Your Name</label>
                   <input
                     type="text"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="obsidian-input"
-                    placeholder="Enter your alias..."
+                    placeholder="Your Name"
                   />
                 </div>
 
@@ -184,7 +184,7 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
                     onClick={handleCreateRoom}
                     className="button-primary w-full gap-3 py-5"
                   >
-                    <span>Initiate Session</span>
+                    <span>Play Now</span>
                     <ArrowRight size={18} />
                   </button>
 
@@ -228,7 +228,7 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
 
                 <div className="relative flex items-center py-4">
                   <div className="flex-grow border-t border-white/5"></div>
-                  <span className="mx-4 flex-shrink text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">Secure Join</span>
+                  <span className="mx-4 flex-shrink text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600">Join Room</span>
                   <div className="flex-grow border-t border-white/5"></div>
                 </div>
 
@@ -252,7 +252,7 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
                       className="button-primary px-8"
                       disabled={!joinRoomId.trim()}
                     >
-                      Join
+                      Join Now
                     </button>
                   </div>
                 )}

@@ -16,14 +16,20 @@ export default function App() {
   const [playerId, setPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Handle auto-join via URL parameter
+    // Handle auto-join via URL parameter with validation
     const params = new URLSearchParams(window.location.search);
     const joinRoomId = params.get('join');
     
     if (joinRoomId && !roomId) {
-      // Auto-join using the room code from URL
-      // Store it so Home component can use it
-      sessionStorage.setItem('autoJoinRoom', joinRoomId);
+      // Validate room ID format before storing: should be 6 alphanumeric characters
+      if (/^[A-Z0-9]{6}$/.test(joinRoomId.toUpperCase())) {
+        sessionStorage.setItem('autoJoinRoom', joinRoomId.toUpperCase());
+      } else {
+        // Invalid room ID format - ignore it to prevent XSS
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Invalid room ID in URL:', joinRoomId);
+        }
+      }
     }
   }, []);
 
