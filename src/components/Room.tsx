@@ -1,9 +1,10 @@
 import { Socket } from 'socket.io-client';
 import { GameState } from '../shared/types';
 import { SUPPORTED_PLAYER_COUNTS } from '../shared/constants';
-import { Users, Copy, Play, Bot, Crown } from 'lucide-react';
+import { Users, Copy, Play, Bot, Crown, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface Props {
   socket: Socket;
@@ -15,6 +16,7 @@ interface Props {
 export default function Room({ socket, gameState, playerName, playerId }: Props) {
   const isHost = gameState.players[0]?.id === playerId;
   const canStart = SUPPORTED_PLAYER_COUNTS.includes(gameState.players.length as (typeof SUPPORTED_PLAYER_COUNTS)[number]);
+  const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(gameState.roomId);
@@ -27,6 +29,13 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
 
   const handleAddAI = (difficulty: string) => {
     socket.emit('addAI', { roomId: gameState.roomId, difficulty });
+  };
+
+  const handleRemovePlayer = (playerId: string, playerName: string) => {
+    setRemovingPlayerId(playerId);
+    socket.emit('removePlayer', { roomId: gameState.roomId, playerId });
+    toast.success(`${playerName} removed from the game`);
+    setRemovingPlayerId(null);
   };
 
   return (
@@ -107,7 +116,7 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.05 }}
-                        className="flex items-center justify-between rounded-2xl bg-slate-900/40 p-4 ring-1 ring-white/5"
+                        className="group relative flex items-center justify-between rounded-2xl bg-slate-900/40 p-4 ring-1 ring-white/5 hover:bg-slate-900/60 transition-all"
                       >
                         <div className="flex items-center gap-4">
                           <div className={`h-2.5 w-2.5 rounded-full shadow-lg ${
@@ -124,9 +133,23 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
                             <span className="text-[10px] uppercase tracking-widest text-slate-500">{player.team} Team</span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          {player.isAI && <span className="status-pill text-[9px] px-2 py-0.5 border-emerald-500/20 bg-emerald-500/5 text-emerald-400">AI Rival</span>}
-                          {!player.connected && <span className="status-pill text-[9px] px-2 py-0.5 border-rose-500/20 bg-rose-500/5 text-rose-400">Offline</span>}
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-2">
+                            {player.isAI && <span className="status-pill text-[9px] px-2 py-0.5 border-emerald-500/20 bg-emerald-500/5 text-emerald-400">AI Rival</span>}
+                            {!player.connected && <span className="status-pill text-[9px] px-2 py-0.5 border-rose-500/20 bg-rose-500/5 text-rose-400">Offline</span>}
+                          </div>
+                          
+                          {/* Remove Button - Only for Host, not for themselves */}
+                          {isHost && player.id !== playerId && (
+                            <button
+                              onClick={() => handleRemovePlayer(player.id, player.name)}
+                              disabled={removingPlayerId === player.id}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 disabled:opacity-50"
+                              title={`Remove ${player.name}`}
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
                         </div>
                       </motion.div>
                     ))}

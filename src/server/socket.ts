@@ -170,6 +170,29 @@ export function setupSocketHandlers(io: Server) {
       emitGameState(io, roomId);
     });
 
+    socket.on('removePlayer', (data: { roomId: string; playerId: string }) => {
+      const connection = connections.get(socket.id);
+      const roomId = data.roomId.toUpperCase();
+      const gameState = rooms.get(roomId);
+
+      // Only host can remove players, and only during waiting status
+      if (!gameState || gameState.status !== 'waiting') return;
+      if (!connection || connection.playerId !== gameState.players[0]?.id) return;
+
+      // Cannot remove the host
+      if (data.playerId === gameState.players[0]?.id) return;
+
+      // Remove player from the game state
+      const updatedState: GameState = {
+        ...gameState,
+        players: gameState.players.filter(p => p.id !== data.playerId),
+      };
+
+      rooms.set(roomId, updatedState);
+      emitGameState(io, roomId);
+      logger.info('Player removed by host', { roomId, removedPlayerId: data.playerId });
+    });
+
     socket.on('startGame', (roomId: string) => {
       const connection = connections.get(socket.id);
       const gameState = rooms.get(roomId);
