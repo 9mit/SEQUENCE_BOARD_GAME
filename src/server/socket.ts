@@ -193,6 +193,57 @@ export function setupSocketHandlers(io: Server) {
       logger.info('Player removed by host', { roomId, removedPlayerId: data.playerId });
     });
 
+    socket.on('leaveRoom', (data: { roomId: string }) => {
+      const connection = connections.get(socket.id);
+      const roomId = data.roomId.toUpperCase();
+      const gameState = rooms.get(roomId);
+
+      if (!connection || connection.roomId !== roomId || !gameState) return;
+
+      // If host leaves, delete the entire room
+      if (gameState.players[0]?.id === connection.playerId) {
+        rooms.delete(roomId);
+        io.to(roomId).emit('roomClosed', { reason: 'Host left the room' });
+        logger.info('Room deleted - host left', { roomId });
+      } else {
+        // Regular player leaves
+        const updatedState: GameState = {
+          ...gameState,
+          players: gameState.players.filter(p => p.id !== connection.playerId),
+        };
+        rooms.set(roomId, updatedState);
+        emitGameState(io, roomId);
+        logger.info('Player left room', { roomId, playerId: connection.playerId });
+      }
+
+      // Disconnect the socket
+      socket.leave(roomId);
+      connections.delete(socket.id);
+    });
+
+    socket.on('deleteRoom', (data: { roomId: string }) => {
+      const connection = connections.get(socket.id);
+      const roomId = data.roomId.toUpperCase();
+      const gameState = rooms.get(roomId);
+
+      // Only host can delete the room
+      if (!gameState || !connection || connection.playerId !== gameState.players[0]?.id) return;
+
+      rooms.delete(roomId);
+      io.to(roomId).emit('roomClosed', { reason: 'Host closed the room' });
+      logger.info('Room deleted by host', { roomId });
+
+      // Disconnect all sockets in the room
+      io.to(roomId).disconnectSockets(true);
+      
+      // Clean up connections for this room
+      for (const [connId, conn] of connections.entries()) {
+        if (conn.roomId === roomId) {
+          connections.delete(connId);
+        }
+      }
+    });
+
     socket.on('startGame', (roomId: string) => {
       const connection = connections.get(socket.id);
       const gameState = rooms.get(roomId);

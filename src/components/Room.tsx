@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io-client';
 import { GameState } from '../shared/types';
 import { SUPPORTED_PLAYER_COUNTS } from '../shared/constants';
-import { Users, Copy, Play, Bot, Crown, X, ArrowRight, LinkIcon } from 'lucide-react';
+import { Users, Copy, Play, Bot, Crown, X, ArrowRight, LinkIcon, ArrowLeft, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -45,12 +45,51 @@ export default function Room({ socket, gameState, playerName, playerId }: Props)
     toast.success('Share link copied to clipboard!');
   };
 
+  const handleLeaveRoom = () => {
+    socket.emit('leaveRoom', { roomId: gameState.roomId });
+  };
+
+  const handleDeleteRoom = () => {
+    if (confirm('Are you sure? This will close the room for all players.')) {
+      socket.emit('deleteRoom', { roomId: gameState.roomId });
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-[#030712] selection:bg-amber-500/30 selection:text-white">
       {/* Ambience */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-blue-900/10 blur-[150px] opacity-50" />
         <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-gold-900/10 blur-[120px] opacity-40" />
+      </div>
+
+      {/* Top Navigation */}
+      <div className="relative z-20 border-b border-white/5 bg-slate-950/50 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <button
+            onClick={handleLeaveRoom}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900/50 transition-all"
+            title="Back to Home"
+          >
+            <ArrowLeft size={18} />
+            <span className="hidden sm:inline text-sm">Back</span>
+          </button>
+          
+          <div className="text-center">
+            <h1 className="font-display text-lg sm:text-xl text-white font-bold">Room {gameState.roomId}</h1>
+          </div>
+
+          {isHost && (
+            <button
+              onClick={handleDeleteRoom}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
+              title="Delete Room"
+            >
+              <Trash2 size={18} />
+              <span className="hidden sm:inline text-sm">Delete</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

@@ -41,6 +41,13 @@ export default function App() {
       setPlayerId(id);
     });
 
+    socket.on('roomClosed', (data: { reason: string }) => {
+      toast.info(data.reason);
+      setGameState(null);
+      setRoomId(null);
+      setPlayerId(null);
+    });
+
     socket.on('error', (msg: string) => {
       toast.error(msg);
     });
@@ -49,6 +56,7 @@ export default function App() {
       socket.off('gameState');
       socket.off('roomCreated');
       socket.off('playerAssigned');
+      socket.off('roomClosed');
       socket.off('error');
     };
   }, []);

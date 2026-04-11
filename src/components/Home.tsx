@@ -39,17 +39,23 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [showAIDifficulty, setShowAIDifficulty] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [isAutoJoining, setIsAutoJoining] = useState(false);
 
   // Handle auto-join from URL
   useEffect(() => {
     const autoJoinRoom = sessionStorage.getItem('autoJoinRoom');
     if (autoJoinRoom) {
       setJoinRoomId(autoJoinRoom);
+      setIsAutoJoining(true);
       sessionStorage.removeItem('autoJoinRoom');
       // Auto-fill a default name if not set
       if (!playerName.trim()) {
         setPlayerName('Guest');
       }
+      // Automatically join after setting name
+      setTimeout(() => {
+        socket.emit('joinRoom', { roomId: autoJoinRoom, playerName: playerName || 'Guest' });
+      }, 100);
     }
   }, []);
 
@@ -226,22 +232,30 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
                   <div className="flex-grow border-t border-white/5"></div>
                 </div>
 
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={joinRoomId}
-                    onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                    className="obsidian-input flex-1 font-mono tracking-[0.4em] placeholder:tracking-normal"
-                    placeholder="ROOM ID"
-                    maxLength={6}
-                  />
-                  <button
-                    onClick={handleJoinRoom}
-                    className="button-secondary px-8"
-                  >
-                    Join
-                  </button>
-                </div>
+                {isAutoJoining ? (
+                  <div className="flex items-center justify-center gap-3 rounded-2xl bg-slate-900/50 p-4 ring-1 ring-white/5">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#c5a059]/30 border-t-[#c5a059]" />
+                    <span className="text-sm text-slate-400">Joining room {joinRoomId}...</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={joinRoomId}
+                      onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                      className="obsidian-input flex-1 font-mono tracking-[0.4em] placeholder:tracking-normal"
+                      placeholder="ROOM ID"
+                      maxLength={6}
+                    />
+                    <button
+                      onClick={handleJoinRoom}
+                      className="button-primary px-8"
+                      disabled={!joinRoomId.trim()}
+                    >
+                      Join
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
