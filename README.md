@@ -1,5 +1,8 @@
 # Sequence: A Digital Board Game Implementation
 
+<img width="1558" height="953" alt="image" src="https://github.com/user-attachments/assets/55abaa1d-5c11-40d9-a2df-b8b912268bd6" />
+
+
 A comprehensive, professionally engineered digital implementation of the classic board game **Sequence**, featuring advanced AI, multiplayer support, and complete adherence to official game rules.
 
 ## 🎯 Recent Updates (April 2026)
