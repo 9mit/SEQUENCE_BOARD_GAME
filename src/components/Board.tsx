@@ -200,10 +200,10 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                     <div className={`absolute inset-0 pointer-events-none opacity-50 mix-blend-multiply ${styles.pattern}`} />
                     <div className="absolute inset-0 p-1 flex flex-col justify-between z-10 bg-white/5 sm:bg-transparent">
                       <div className="flex justify-between items-start opacity-90">
-                        <span className={`text-[7px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`text-[6px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
                           {space.rank}
                         </span>
-                        <span className={`text-[7px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`text-[6px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
                           {getSuitSymbol(space.suit)}
                         </span>
                       </div>
@@ -214,10 +214,10 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                         </div>
                       </div>
                       <div className="flex justify-between items-end opacity-90 rotate-180">
-                        <span className={`text-[7px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`text-[6px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
                           {space.rank}
                         </span>
-                        <span className={`text-[7px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`text-[6px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
                           {getSuitSymbol(space.suit)}
                         </span>
                       </div>

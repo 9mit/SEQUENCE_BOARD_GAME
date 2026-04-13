@@ -138,10 +138,10 @@ function HandCard({ card, isSelected, isMyTurn, index, onSelectCard }: { card: C
         transition={{ delay: index * 0.05 }}
         whileHover={isMyTurn ? { y: -8, scale: 1.02 } : {}}
         whileTap={isMyTurn ? { scale: 0.95 } : {}}
-        className={`w-[5.5rem] sm:w-[7.5rem] ${!isMyTurn ? 'cursor-not-allowed grayscale-[0.5] opacity-60' : 'cursor-pointer'}`}
+        className={`w-[4.4rem] sm:w-[7.5rem] ${!isMyTurn ? 'cursor-not-allowed grayscale-[0.5] opacity-60' : 'cursor-pointer'}`}
       >
         {/* Card Body */}
-        <div className={`relative h-[8rem] w-full sm:h-[11rem] bg-[#fdfdfd] p-1.5 sm:p-3 shadow-2xl transition-all duration-500 overflow-hidden ${styles.border} ${
+        <div className={`relative h-[6.2rem] w-full sm:h-[11rem] bg-[#fdfdfd] p-1.5 sm:p-3 shadow-2xl transition-all duration-500 overflow-hidden ${styles.border} ${
           isSelected 
             ? 'ring-2 ring-[#c5a059]/40 border-[#c5a059] -translate-y-2 sm:-translate-y-4 shadow-[0_10px_30px_rgba(197,160,89,0.4)]' 
             : 'group-hover:border-[#c5a059]/40'
@@ -153,16 +153,16 @@ function HandCard({ card, isSelected, isMyTurn, index, onSelectCard }: { card: C
           <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#c5a059]/40 to-transparent transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
 
           <div className="relative z-10 flex flex-col h-full justify-between items-start">
-            <div className={`text-[11px] sm:text-xs font-black leading-none text-left ${getSuitColor(card.suit)}`}>
+            <div className={`text-[9px] sm:text-xs font-black leading-none text-left ${getSuitColor(card.suit)}`}>
               <div className="mb-0.5">{card.rank}</div>
               <div className="text-xs sm:text-sm">{getSuitSymbol(card.suit)}</div>
             </div>
 
-            <div className={`flex flex-1 w-full items-center justify-center text-3xl sm:text-5xl opacity-90 ${getSuitColor(card.suit)}`}>
+            <div className={`flex flex-1 w-full items-center justify-center text-2xl sm:text-5xl opacity-90 ${getSuitColor(card.suit)}`}>
               <div className={styles.anim}>{getSuitSymbol(card.suit)}</div>
             </div>
 
-            <div className={`text-[11px] sm:text-xs font-black leading-none text-left rotate-180 self-end ${getSuitColor(card.suit)}`}>
+            <div className={`text-[9px] sm:text-xs font-black leading-none text-left rotate-180 self-end ${getSuitColor(card.suit)}`}>
               <div className="mb-0.5">{card.rank}</div>
               <div className="text-xs sm:text-sm">{getSuitSymbol(card.suit)}</div>
             </div>
@@ -171,7 +171,7 @@ function HandCard({ card, isSelected, isMyTurn, index, onSelectCard }: { card: C
           {/* Jack Badges */}
           {(isTwoEyed || isOneEyed) && (
             <div className="absolute inset-x-0 bottom-1 sm:top-1/2 sm:-translate-y-1/2 px-1 z-20">
-              <div className="bg-slate-900 border border-[#c5a059]/50 text-[#c5a059] text-[7px] sm:text-[8px] font-black uppercase tracking-widest py-0.5 sm:py-1 px-1 sm:px-2 rounded-full text-center shadow-lg">
+              <div className="bg-slate-900 border border-[#c5a059]/50 text-[#c5a059] text-[6px] sm:text-[8px] font-black uppercase tracking-widest py-0.5 sm:py-1 px-1 sm:px-2 rounded-full text-center shadow-lg">
                 {isTwoEyed ? 'Wild' : 'Remove'}
               </div>
             </div>
