@@ -182,7 +182,7 @@ export default function Home({ socket, playerName, setPlayerName, deviceMode, se
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Device Optimization</label>
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Which device are you using?</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => setDeviceMode('pc')}
