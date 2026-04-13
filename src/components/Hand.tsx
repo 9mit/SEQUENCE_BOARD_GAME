@@ -72,27 +72,30 @@ function getSuitStyles(suit: string) {
 }
 
 export default function Hand({ hand, selectedCardId, onSelectCard, isMyTurn }: Props) {
-  const [orderedHand, setOrderedHand] = useState<Card[]>(hand);
+  const [orderedIds, setOrderedIds] = useState<string[]>(hand.map(c => c.id));
 
   // Sync ordered hand with incoming hand prop while preserving custom order
   useEffect(() => {
-    setOrderedHand(prev => {
+    setOrderedIds(prev => {
       // 1. Filter out cards that are no longer in the hand
-      const existingCards = prev.filter(c => hand.some(h => h.id === c.id));
+      const existingIds = prev.filter(id => hand.some(h => h.id === id));
       
       // 2. Find new cards that weren't in our ordered list
-      const newCards = hand.filter(h => !prev.some(c => c.id === h.id));
+      const newIds = hand.filter(h => !prev.includes(h.id)).map(h => h.id);
       
       // 3. Combine them
-      return [...existingCards, ...newCards];
+      return [...existingIds, ...newIds];
     });
   }, [hand]);
+
+  // Reconstruct ordered hand based on orderedIds
+  const orderedHand = orderedIds.map(id => hand.find(c => c.id === id)).filter(Boolean) as Card[];
 
   return (
     <Reorder.Group 
       axis="x" 
-      values={orderedHand} 
-      onReorder={setOrderedHand}
+      values={orderedIds} 
+      onReorder={setOrderedIds}
       className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 sm:pb-6 pt-1 sm:pt-2 px-1 sm:px-2 scrollbar-none custom-scrollbar touch-pan-x"
     >
       {orderedHand.map((card, index) => {
@@ -120,7 +123,7 @@ function HandCard({ card, isSelected, isMyTurn, index, onSelectCard }: { card: C
 
   return (
     <Reorder.Item
-      value={card}
+      value={card.id}
       dragListener={false}
       dragControls={controls}
       className={`group relative shrink-0 transition-all duration-300 flex flex-col items-center ${
@@ -180,9 +183,12 @@ function HandCard({ card, isSelected, isMyTurn, index, onSelectCard }: { card: C
       {isMyTurn && (
         <div 
           className="mt-1 sm:mt-2 p-1.5 text-slate-500 hover:text-[#c5a059] hover:bg-white/5 rounded-full cursor-grab active:cursor-grabbing touch-none transition-colors group-hover:opacity-100 sm:opacity-50"
-          onPointerDown={(e) => controls.start(e)}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            controls.start(e);
+          }}
         >
-          <GripHorizontal size={16} className="sm:w-6 sm:h-6" />
+          <GripHorizontal size={16} className="sm:w-6 sm:h-6 pointer-events-none" />
         </div>
       )}
 
