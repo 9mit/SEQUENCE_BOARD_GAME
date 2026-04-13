@@ -1,6 +1,6 @@
 import { Socket } from 'socket.io-client';
 import { useState, useEffect } from 'react';
-import { Bot, Users, Sparkles, ArrowRight, BookOpen } from 'lucide-react';
+import { Bot, Users, Sparkles, ArrowRight, BookOpen, Monitor, Smartphone, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import HowToPlay from './HowToPlay';
@@ -9,6 +9,8 @@ interface Props {
   socket: Socket;
   playerName: string;
   setPlayerName: (name: string) => void;
+  deviceMode: 'mobile' | 'pc';
+  setDeviceMode: (mode: 'mobile' | 'pc') => void;
 }
 
 const highlights = [
@@ -35,7 +37,7 @@ const stats = [
   { value: '3', label: 'AI difficulty tiers' },
 ];
 
-export default function Home({ socket, playerName, setPlayerName }: Props) {
+export default function Home({ socket, playerName, setPlayerName, deviceMode, setDeviceMode }: Props) {
   const [joinRoomId, setJoinRoomId] = useState('');
   const [showAIDifficulty, setShowAIDifficulty] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -175,8 +177,36 @@ export default function Home({ socket, playerName, setPlayerName }: Props) {
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     className="obsidian-input"
-                    placeholder="Your Name"
+                    placeholder="Your Alias"
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Device Optimization</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setDeviceMode('pc')}
+                      className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-4 transition-all duration-300 ${
+                        deviceMode === 'pc'
+                          ? 'border-amber-500/50 bg-amber-500/10 text-white shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                          : 'border-white/5 bg-slate-900/50 text-slate-500 hover:border-white/10 hover:text-slate-300'
+                      }`}
+                    >
+                      <Monitor size={18} />
+                      <span className="text-xs font-bold uppercase tracking-wider">PC / Laptop</span>
+                    </button>
+                    <button
+                      onClick={() => setDeviceMode('mobile')}
+                      className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-4 transition-all duration-300 ${
+                        deviceMode === 'mobile'
+                          ? 'border-amber-500/50 bg-amber-500/10 text-white shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                          : 'border-white/5 bg-slate-900/50 text-slate-500 hover:border-white/10 hover:text-slate-300'
+                      }`}
+                    >
+                      <Smartphone size={18} />
+                      <span className="text-xs font-bold uppercase tracking-wider">Mobile</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">

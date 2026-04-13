@@ -16,6 +16,7 @@ interface Props {
   gameState: GameState;
   playerName: string;
   playerId: string | null;
+  deviceMode: 'mobile' | 'pc';
 }
 
 const TEAM_STYLES: Record<TeamColor, { dot: string; text: string; badge: string; glow: string; ring: string }> = {
@@ -51,7 +52,7 @@ function describeCard(card?: Card | null) {
   return `${card.rank} of ${capitalize(card.suit)}`;
 }
 
-export default function Game({ socket, gameState, playerName, playerId }: Props) {
+export default function Game({ socket, gameState, playerName, playerId, deviceMode }: Props) {
   const { playSound } = useSound();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -125,7 +126,7 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
   );
 
   return (
-    <div className="relative h-[100dvh] w-screen bg-[#030712] overflow-hidden selection:bg-[#c5a059]/30">
+    <div className={`relative w-screen bg-[#030712] selection:bg-[#c5a059]/30 ${deviceMode === 'mobile' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen overflow-x-hidden'}`}>
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[30rem] h-[30rem] bg-gold-900/5 blur-[120px] rounded-full" />
@@ -171,7 +172,7 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
 
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
-      <div className="relative z-10 mx-auto max-w-[1600px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-8 flex flex-col h-[100dvh] gap-2 sm:gap-4 overflow-hidden">
+      <div className={`relative z-10 mx-auto max-w-[1700px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-6 flex flex-col gap-2 sm:gap-4 ${deviceMode === 'mobile' ? 'h-[100dvh] overflow-hidden' : ''}`}>
         {/* Compact Header HUD */}
         <header className="premium-panel rounded-xl sm:rounded-[2rem] p-2 sm:p-4 shrink-0">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4">
@@ -201,7 +202,7 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
               ))}
               <button 
                 onClick={() => setShowMobileInfo(!showMobileInfo)} 
-                className="button-secondary h-fit px-2 py-1 text-[9px] xl:hidden flex items-center gap-1"
+                className={`button-secondary h-fit px-2 py-1 text-[9px] flex items-center gap-1 ${deviceMode === 'pc' ? 'xl:hidden' : 'xl:hidden'}`}
               >
                 <Target size={10} /> Info
               </button>
@@ -211,8 +212,8 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
          </div>
         </header>
 
-         <main className="flex-grow min-h-0 overflow-hidden hide-scrollbar w-full">
-          <div className="flex flex-col xl:flex-row h-full gap-2 sm:gap-6 w-[100%]">
+         <main className={`flex-grow min-h-0 w-full ${deviceMode === 'mobile' ? 'overflow-hidden' : ''}`}>
+          <div className={`flex flex-col h-full gap-2 sm:gap-6 w-[100%] ${deviceMode === 'pc' ? 'xl:grid xl:grid-cols-[1fr_360px]' : 'xl:flex-row'}`}>
             <section className="flex flex-col gap-2 sm:gap-6 min-h-0 flex-grow w-full">
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_320px] shrink-0">
                <div className="premium-panel rounded-xl p-2 sm:p-4 lg:p-6 space-y-1 sm:space-y-4">
@@ -306,9 +307,13 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
             )}
             </section>
  
-          <aside className={`fixed inset-0 xl:relative xl:inset-auto z-50 xl:z-10 bg-[#030712]/95 xl:bg-transparent backdrop-blur-xl xl:backdrop-blur-none transition-transform duration-500 ${showMobileInfo ? 'translate-y-0' : 'translate-y-full xl:translate-y-0'} flex flex-col w-full xl:w-[360px] h-[100dvh] xl:h-full overflow-hidden p-4 xl:p-0 shrink-0`}>
+          <aside className={`transition-transform duration-500 flex flex-col shrink-0 ${
+            deviceMode === 'mobile' 
+              ? `fixed inset-0 z-50 bg-[#030712]/95 backdrop-blur-xl p-4 ${showMobileInfo ? 'translate-y-0' : 'translate-y-full'}` 
+              : `fixed inset-0 xl:relative xl:inset-auto z-50 xl:z-10 bg-[#030712]/95 xl:bg-transparent backdrop-blur-xl xl:backdrop-blur-none p-4 xl:p-0 w-full xl:w-auto h-[100dvh] xl:h-full ${showMobileInfo ? 'translate-y-0' : 'translate-y-full xl:translate-y-0'}`
+          }`}>
             {/* Mobile Close Button */}
-            <div className="xl:hidden flex justify-center pb-4">
+            <div className={`${deviceMode === 'pc' ? 'xl:hidden' : ''} flex justify-center pb-4`}>
               <button 
                 onClick={() => setShowMobileInfo(false)}
                 className="w-12 h-1.5 rounded-full bg-slate-800"

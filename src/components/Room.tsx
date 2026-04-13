@@ -11,6 +11,7 @@ interface Props {
   gameState: GameState;
   playerName: string;
   playerId: string | null;
+  deviceMode: 'mobile' | 'pc';
 }
 
 export default function Room({ socket, gameState, playerName, playerId }: Props) {

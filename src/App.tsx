@@ -14,6 +14,7 @@ export default function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const [deviceMode, setDeviceMode] = useState<'mobile' | 'pc'>('pc');
 
   useEffect(() => {
     // Handle auto-join via URL parameter with validation
@@ -84,15 +85,15 @@ export default function App() {
       />
       {(() => {
         if (!roomId) {
-          return <Home socket={socket} setPlayerName={setPlayerName} playerName={playerName} />;
+          return <Home socket={socket} setPlayerName={setPlayerName} playerName={playerName} deviceMode={deviceMode} setDeviceMode={setDeviceMode} />;
         }
 
         if (gameState?.status === 'waiting') {
-          return <Room socket={socket} gameState={gameState} playerName={playerName} playerId={playerId} />;
+          return <Room socket={socket} gameState={gameState} playerName={playerName} playerId={playerId} deviceMode={deviceMode} />;
         }
 
         if (gameState?.status === 'playing' || gameState?.status === 'finished') {
-          return <Game socket={socket} gameState={gameState} playerName={playerName} playerId={playerId} />;
+          return <Game socket={socket} gameState={gameState} playerName={playerName} playerId={playerId} deviceMode={deviceMode} />;
         }
 
         return (
