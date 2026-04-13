@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { Card, GameState, TeamColor } from '../shared/types';
 import { isDeadCard } from '../shared/gameLogic';
@@ -9,6 +9,7 @@ import GameStats from './GameStats';
 import HowToPlay from './HowToPlay';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Users, RefreshCw, BookOpen, Target, Sparkles, LogOut, Clock, WifiOff } from 'lucide-react';
+import { useSound } from '../hooks/useSound';
 
 interface Props {
   socket: Socket;
@@ -51,9 +52,12 @@ function describeCard(card?: Card | null) {
 }
 
 export default function Game({ socket, gameState, playerName, playerId }: Props) {
+  const { playSound } = useSound();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showMobileInfo, setShowMobileInfo] = useState(false);
+  const prevSequencesCount = useRef(gameState.sequences.length);
+  const prevStatus = useRef(gameState.status);
 
   const myPlayer = gameState.players.find((player) => player.id === playerId);
   const isMyTurn = gameState.currentTurn === playerId;
@@ -76,15 +80,32 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
     }
   }, [myPlayer, selectedCardId]);
 
+  // Sound triggers for gameplay events
+  useEffect(() => {
+    // Check for new sequences
+    if (gameState.sequences.length > prevSequencesCount.current) {
+      playSound('SEQUENCE_COMPLETED');
+    }
+    prevSequencesCount.current = gameState.sequences.length;
+
+    // Check for game end
+    if (gameState.status === 'finished' && prevStatus.current !== 'finished') {
+      playSound('VICTORY');
+    }
+    prevStatus.current = gameState.status;
+  }, [gameState.sequences.length, gameState.status, playSound]);
+
   const handleSpaceClick = (spaceId: string) => {
     if (!isMyTurn || !selectedCardId) return;
     socket.emit('makeMove', { roomId: gameState.roomId, cardId: selectedCardId, spaceId });
+    playSound('PLACE_COIN');
     setSelectedCardId(null);
   };
 
   const handleDeadCard = () => {
     if (!isMyTurn || !selectedCardId) return;
     socket.emit('makeMove', { roomId: gameState.roomId, cardId: selectedCardId });
+    playSound('PLACE_COIN');
     setSelectedCardId(null);
   };
 
@@ -104,7 +125,7 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
   );
 
   return (
-    <div className="relative min-h-screen bg-[#030712] overflow-x-hidden selection:bg-[#c5a059]/30">
+    <div className="relative h-[100dvh] w-screen bg-[#030712] overflow-hidden selection:bg-[#c5a059]/30">
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[30rem] h-[30rem] bg-gold-900/5 blur-[120px] rounded-full" />
@@ -147,63 +168,54 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
         )}
       </AnimatePresence>
 
+
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
-      <div className="relative z-10 mx-auto max-w-[1600px] px-2 py-2 sm:px-6 sm:py-4 lg:px-8 flex flex-col min-h-screen gap-4 sm:gap-6">
+      <div className="relative z-10 mx-auto max-w-[1600px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-8 flex flex-col h-[100dvh] gap-2 sm:gap-4 overflow-hidden">
         {/* Compact Header HUD */}
-        <header className="premium-panel rounded-2xl sm:rounded-[2rem] p-3 sm:p-4 lg:p-6 shrink-0">
-         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             <div className="flex items-center gap-3 sm:gap-6">
-              <div className="space-y-0.5 sm:space-y-1">
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Active Encounter</span>
-                <h1 className="font-display text-xl sm:text-3xl text-white leading-none">
-                  Sequence <span className="text-slate-700 font-sans font-light opacity-50 text-sm sm:text-base">/ {gameState.roomId.slice(0, 4)}</span>
+        <header className="premium-panel rounded-xl sm:rounded-[2rem] p-2 sm:p-4 shrink-0">
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4">
+             <div className="flex items-center gap-2 sm:gap-6">
+              <div className="space-y-0 sm:space-y-1">
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.4em] text-[#c5a059] hidden sm:block">Active Encounter</span>
+                <h1 className="font-display text-lg sm:text-3xl text-white leading-none flex items-baseline gap-2">
+                  Sequence <span className="text-slate-700 font-sans font-light opacity-50 text-xs sm:text-base">/ {gameState.roomId.slice(0, 4)}</span>
                 </h1>
               </div>
-              <div className="status-pill h-fit px-2 py-0.5 sm:px-3 sm:py-1 border-white/5 bg-white/5 text-slate-400 text-[10px] sm:text-xs">
-                <Users size={10} className="mr-1.5" />
+              <div className="status-pill h-fit px-2 py-0.5 sm:px-3 sm:py-1 border-white/5 bg-white/5 text-slate-400 text-[9px] sm:text-xs">
+                <Users size={10} className="mr-1 sm:mr-1.5" />
                 <span className="hidden sm:inline">{gameState.players.length} Strategists</span>
                 <span className="sm:hidden">{gameState.players.length}</span>
               </div>
             </div>
-             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+             <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-3">
               {[
                 { label: 'Tactician', value: playerName, active: isMyTurn, hideOnMobile: true },
                 { label: 'Initiative', value: currentTurnPlayer?.name || 'Awaiting', active: true },
                 { label: 'Supply', value: gameState.drawDeck.length, active: false },
               ].filter(s => !s.hideOnMobile || window.innerWidth > 640).map((stat, i) => (
-                <div key={i} className={`rounded-lg sm:rounded-xl px-2 py-1 sm:px-4 sm:py-2 ring-1 flex flex-col justify-center min-w-[70px] sm:min-w-[100px] ${stat.active ? 'bg-amber-500/5 ring-[#c5a059]/30 shadow-lg' : 'bg-slate-900/30 ring-white/5'}`}>
-                  <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-widest text-slate-500">{stat.label}</span>
-                  <p className={`text-[10px] sm:text-sm font-bold truncate ${stat.active ? 'text-[#c5a059]' : 'text-white'}`}>{stat.value}</p>
+                <div key={i} className={`rounded-lg sm:rounded-xl px-2 py-0.5 sm:px-4 sm:py-2 ring-1 flex flex-col justify-center min-w-[60px] sm:min-w-[100px] ${stat.active ? 'bg-amber-500/5 ring-[#c5a059]/30 shadow-lg' : 'bg-slate-900/30 ring-white/5'}`}>
+                  <span className="text-[6px] sm:text-[8px] font-bold uppercase tracking-widest text-slate-500">{stat.label}</span>
+                  <p className={`text-[9px] sm:text-sm font-bold truncate ${stat.active ? 'text-[#c5a059]' : 'text-white'}`}>{stat.value}</p>
                 </div>
               ))}
               <button 
                 onClick={() => setShowMobileInfo(!showMobileInfo)} 
-                className="button-secondary h-fit px-3 py-2 text-[10px] sm:hidden"
+                className="button-secondary h-fit px-2 py-1 text-[9px] xl:hidden flex items-center gap-1"
               >
-                <Target size={12} /> Info
+                <Target size={10} /> Info
               </button>
-              <button onClick={() => setShowHowToPlay(true)} className="button-secondary h-fit px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs">
-                <BookOpen size={12} className="sm:size-14" />
-                <span className="hidden sm:inline">Manual</span>
-              </button>
-              <button 
-                onClick={handleForfeit}
-                className="button-secondary h-fit px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs border-rose-500/20 text-rose-400 hover:bg-rose-500/10"
-                title="Forfeit Match"
-              >
-                <LogOut size={12} className="sm:size-14" />
-                <span className="hidden sm:inline">Leave</span>
-              </button>
+              <button onClick={() => setShowHowToPlay(true)} className="button-secondary h-fit px-2 py-1 sm:px-4 sm:py-2.5 text-[9px] sm:text-xs min-w-[50px]"><BookOpen size={10} className="sm:size-14 mx-auto" /><span className="hidden sm:inline ml-1">Manual</span></button>
+              <button onClick={handleForfeit} className="button-secondary h-fit px-2 py-1 sm:px-4 sm:py-2.5 text-[9px] sm:text-xs border-rose-500/20 text-rose-400 hover:bg-rose-500/10" title="Forfeit Match"><LogOut size={10} className="sm:size-14 mx-auto" /><span className="hidden sm:inline ml-1">Leave</span></button>
             </div>
          </div>
         </header>
 
-         <main className="flex-grow min-h-0 overflow-y-auto sm:overflow-visible hide-scrollbar pb-24 sm:pb-0">
-          <div className="grid h-full gap-4 sm:gap-6 xl:grid-cols-[1fr_360px]">
-            <section className="flex flex-col gap-4 sm:gap-6 min-h-0">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_320px] shrink-0">
-               <div className="premium-panel rounded-2xl p-4 lg:p-6 space-y-4">
+         <main className="flex-grow min-h-0 overflow-hidden hide-scrollbar w-full">
+          <div className="flex flex-col xl:flex-row h-full gap-2 sm:gap-6 w-[100%]">
+            <section className="flex flex-col gap-2 sm:gap-6 min-h-0 flex-grow w-full">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_320px] shrink-0">
+               <div className="premium-panel rounded-xl p-2 sm:p-4 lg:p-6 space-y-1 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Tactical Dominance</span>
                     <Target size={14} className="text-[#c5a059]" />
@@ -225,7 +237,7 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
                   </div>
                 </div>
 
-                <div className="premium-panel rounded-2xl p-4 lg:p-6 space-y-4 flex flex-col justify-between">
+                <div className="premium-panel rounded-xl p-2 sm:p-4 lg:p-6 space-y-1 sm:space-y-4 flex flex-col justify-between hidden sm:flex">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Action Focus</span>
                     <Sparkles size={14} className="text-[#c5a059]" />
@@ -254,26 +266,28 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
               </div>
 
              {/* Central Board Stage - Scales to fit remaining height */}
-            <section className="premium-panel-strong rounded-2xl sm:rounded-[2.5rem] p-2 sm:p-4 lg:p-6 relative flex flex-col justify-center min-h-0 flex-grow">
-              <div className="absolute top-0 right-0 p-3 sm:p-6 flex gap-2">
-                <span className="status-pill text-[7px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
+            <section className="premium-panel-strong rounded-xl sm:rounded-[2rem] p-1 sm:p-2 lg:p-4 relative flex flex-col items-center justify-center min-h-0 flex-grow overflow-hidden w-full">
+              <div className="absolute top-0 right-0 p-1 sm:p-4 flex gap-1 z-10 pointer-events-none">
+                <span className="status-pill text-[6px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
               </div>
-             <div className="w-full max-w-[80vh] mx-auto aspect-square">
-                <Board
-                  board={gameState.board}
-                  onSpaceClick={handleSpaceClick}
-                  sequences={gameState.sequences}
-                  selectedCard={selectedCard ?? undefined}
-                  myTeam={myPlayer?.team}
-                  winningTeam={gameState.winner}
-                />
+             <div className="h-full aspect-square max-w-full max-h-[85vw] xl:max-h-full mx-auto flex shrink min-h-0 items-center justify-center">
+                <div className="w-full h-full">
+                  <Board
+                    board={gameState.board}
+                    onSpaceClick={handleSpaceClick}
+                    sequences={gameState.sequences}
+                    selectedCard={selectedCard ?? undefined}
+                    myTeam={myPlayer?.team}
+                    winningTeam={gameState.winner}
+                  />
+                </div>
               </div>
             </section>
 
              {/* Hand Control */}
             {myPlayer && (
-              <section className="premium-panel rounded-2xl sm:rounded-[2rem] p-3 sm:p-4 lg:p-6 shrink-0">
-                <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <section className="premium-panel rounded-xl sm:rounded-[1.5rem] p-2 sm:p-4 lg:p-6 shrink-0 overflow-visible w-full">
+                <div className="flex items-center justify-between mb-1 sm:mb-4">
                   <div>
                     <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Strategic Reserve</span>
                     <h2 className="text-lg sm:text-xl font-display text-white">Command Hand</h2>
@@ -292,16 +306,16 @@ export default function Game({ socket, gameState, playerName, playerId }: Props)
             )}
             </section>
  
-          <aside className={`fixed inset-0 sm:relative sm:inset-auto z-50 sm:z-10 bg-[#030712]/95 sm:bg-transparent backdrop-blur-xl sm:backdrop-blur-none transition-transform duration-500 ${showMobileInfo ? 'translate-y-0' : 'translate-y-full sm:translate-y-0'} flex flex-col h-full overflow-hidden p-4 sm:p-0`}>
+          <aside className={`fixed inset-0 xl:relative xl:inset-auto z-50 xl:z-10 bg-[#030712]/95 xl:bg-transparent backdrop-blur-xl xl:backdrop-blur-none transition-transform duration-500 ${showMobileInfo ? 'translate-y-0' : 'translate-y-full xl:translate-y-0'} flex flex-col w-full xl:w-[360px] h-[100dvh] xl:h-full overflow-hidden p-4 xl:p-0 shrink-0`}>
             {/* Mobile Close Button */}
-            <div className="sm:hidden flex justify-center pb-4">
+            <div className="xl:hidden flex justify-center pb-4">
               <button 
                 onClick={() => setShowMobileInfo(false)}
                 className="w-12 h-1.5 rounded-full bg-slate-800"
               />
             </div>
             
-            <div className="flex-grow space-y-4 sm:space-y-6 overflow-y-auto hide-scrollbar pb-20 sm:pb-0">
+            <div className="flex-grow space-y-4 overflow-y-auto hide-scrollbar pb-[100px] xl:pb-0">
               <section className="shrink-0 overflow-hidden rounded-2xl">
                 <GameStats gameState={gameState} myPlayer={myPlayer} myTeam={myPlayer?.team} />
               </section>
