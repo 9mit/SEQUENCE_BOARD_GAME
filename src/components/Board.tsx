@@ -29,7 +29,53 @@ function getSuitSymbol(suit?: string) {
 }
 
 function getSuitColor(suit?: string) {
-  return suit === 'hearts' || suit === 'diamonds' ? 'text-rose-500' : 'text-slate-400';
+  switch (suit) {
+    case 'hearts': return 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'; // Bright red
+    case 'diamonds': return 'text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]'; // Orange
+    case 'spades': return 'text-slate-900 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]'; // Dark blue/black
+    case 'clubs': return 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]'; // Green
+    default: return 'text-slate-400';
+  }
+}
+
+function getSuitStyles(suit?: string) {
+  switch (suit) {
+    case 'hearts':
+      return {
+        boardBg: 'bg-red-500/10',
+        border: 'rounded-[0.5rem] sm:rounded-[0.8rem] border border-red-500/30',
+        pattern: 'bg-[radial-gradient(ellipse_at_center,rgba(239,68,68,0.15)_0%,transparent_70%)]',
+        anim: 'animate-[pulse_3s_ease-in-out_infinite]',
+      };
+    case 'diamonds':
+      return {
+        boardBg: 'bg-orange-500/10',
+        border: 'rounded-none border border-orange-500/40',
+        pattern: 'bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(249,115,22,0.06)_4px,rgba(249,115,22,0.06)_8px)]',
+        anim: 'opacity-80 transition-opacity duration-1000 animate-[pulse_2s_ease-in-out_infinite]',
+      };
+    case 'spades':
+      return {
+        boardBg: 'bg-slate-700/20',
+        border: 'rounded-[0.25rem] border-[2px] border-slate-600/80',
+        pattern: 'bg-[repeating-linear-gradient(-45deg,transparent,transparent_6px,rgba(15,23,42,0.06)_6px,rgba(15,23,42,0.06)_12px)]',
+        anim: '',
+      };
+    case 'clubs':
+      return {
+        boardBg: 'bg-emerald-500/10',
+        border: 'rounded-[0.25rem] border-[1.5px] border-emerald-500/40 border-dashed',
+        pattern: 'bg-[radial-gradient(rgba(16,185,129,0.1)_2px,transparent_2px)] bg-[size:8px_8px]',
+        anim: 'animate-[bounce_4s_ease-in-out_infinite]',
+      };
+    default:
+      return {
+        boardBg: 'bg-white/[0.03]',
+        border: 'rounded-[2px] sm:rounded-lg border-white/5 bg-white/[0.03]',
+        pattern: '',
+        anim: '',
+      };
+  }
 }
 
 function getChipColor(team: string) {
@@ -122,6 +168,7 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
             const isHighlighted = isSpaceHighlighted(space);
             const inSequence = sequences.some((seq) => seq.spaces.includes(space.id));
             const isProgress = progressChips.has(space.id);
+            const styles = getSuitStyles(space.suit);
 
             return (
               <motion.button
@@ -130,10 +177,10 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                 onClick={() => onSpaceClick(space.id)}
                 whileHover={isHighlighted ? { scale: 1.05, zIndex: 30 } : {}}
                 whileTap={isHighlighted ? { scale: 0.95 } : {}}
-                className={`group relative aspect-square overflow-hidden rounded-[2px] sm:rounded-lg transition-all duration-300 border ${
+                className={`group relative aspect-square overflow-hidden transition-all duration-300 ${
                   space.isCorner
-                    ? 'border-[#c5a059]/40 bg-slate-900 shadow-[inset_0_0_20px_rgba(197,160,89,0.1)]'
-                    : 'border-white/5 bg-white/[0.03]'
+                    ? 'rounded-[2px] sm:rounded-lg border border-[#c5a059]/40 bg-slate-900 shadow-[inset_0_0_20px_rgba(197,160,89,0.1)]'
+                    : `${styles.border} ${styles.boardBg}`
                 } ${
                   isHighlighted
                     ? 'cursor-pointer ring-1 sm:ring-2 ring-[#c5a059] shadow-[0_0_10px_rgba(197,160,89,0.4)] z-20 brightness-125'
@@ -143,41 +190,44 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                     ? 'opacity-20 translate-z-[-10px]'
                     : 'opacity-100'
                 } ${inSequence ? 'ring-1 sm:ring-2 ring-[#c5a059] shadow-[0_0_15px_rgba(197,160,89,0.6)] z-20' : ''}`}
-             >
+              >
                 {space.isCorner ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Sparkles size={16} className="text-[#c5a059] opacity-60 animate-pulse" />
                   </div>
                 ) : (
-                  <div className="absolute inset-0 p-1 flex flex-col justify-between">
-                     <div className="flex justify-between items-start opacity-80">
-                      <span className={`text-[6px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
-                        {space.rank}
-                      </span>
-                      <span className={`text-[6px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
-                        {getSuitSymbol(space.suit)}
-                      </span>
-                    </div>
-                   
-                     <div className={`flex w-full items-center justify-center opacity-40 group-hover:opacity-80 transition-opacity`}>
-                      <span className={`text-xs sm:text-2xl md:text-3xl ${getSuitColor(space.suit)}`}>
-                        {getSuitSymbol(space.suit)}
-                      </span>
-                    </div>
-                     <div className="flex justify-between items-end opacity-80 rotate-180">
-                      <span className={`text-[6px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
-                        {space.rank}
-                      </span>
-                      <span className={`text-[6px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
-                        {getSuitSymbol(space.suit)}
-                      </span>
-                    </div>
-                 </div>
+                  <>
+                    <div className={`absolute inset-0 pointer-events-none opacity-50 mix-blend-multiply ${styles.pattern}`} />
+                    <div className="absolute inset-0 p-1 flex flex-col justify-between z-10 bg-white/5 sm:bg-transparent">
+                      <div className="flex justify-between items-start opacity-90">
+                        <span className={`text-[7px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                          {space.rank}
+                        </span>
+                        <span className={`text-[7px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                          {getSuitSymbol(space.suit)}
+                        </span>
+                      </div>
+                     
+                      <div className={`flex w-full items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity`}>
+                        <div className={`text-sm sm:text-2xl md:text-3xl ${getSuitColor(space.suit)} ${styles.anim}`}>
+                          {getSuitSymbol(space.suit)}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end opacity-90 rotate-180">
+                        <span className={`text-[7px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                          {space.rank}
+                        </span>
+                        <span className={`text-[7px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                          {getSuitSymbol(space.suit)}
+                        </span>
+                      </div>
+                   </div>
+                  </>
                 )}
 
                 {/* Target Projection */}
                 {isHighlighted && !space.chip && myTeam && (
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20">
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 0.4 }}
@@ -196,7 +246,7 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                       initial={{ scale: 0, opacity: 0, y: -20 }}
                       animate={{ scale: 1, opacity: 1, y: 0 }}
                       exit={{ scale: 0, opacity: 0 }}
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center p-1.5 z-10`}
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center p-1.5 z-30`}
                     >
                       <div
                         className={`relative h-full w-full rounded-full ring-1 ring-white/30 shadow-2xl ${getChipColor(space.chip)} ${
