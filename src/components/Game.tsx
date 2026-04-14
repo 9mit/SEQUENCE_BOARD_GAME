@@ -271,7 +271,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
               <div className="absolute top-0 right-0 p-1 sm:p-4 hidden sm:flex gap-1 z-10 pointer-events-none">
                 <span className="status-pill text-[6px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
               </div>
-             <div className="h-full aspect-square max-w-full max-h-[85vw] xl:max-h-full mx-auto flex shrink min-h-0 items-center justify-center">
+             <div className="h-full aspect-square max-w-full max-h-[96vw] xl:max-h-full mx-auto flex shrink min-h-0 items-center justify-center">
                 <div className="w-full h-full">
                   <Board
                     board={gameState.board}
