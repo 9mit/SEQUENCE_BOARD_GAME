@@ -176,7 +176,7 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                 type="button"
                 onClick={() => onSpaceClick(space.id)}
                 whileHover={isHighlighted ? { scale: 1.05, zIndex: 30 } : {}}
-                whileTap={isHighlighted ? { scale: 0.95 } : {}}
+                whileTap={{ scale: 0.95 }}
                 className={`group relative aspect-square overflow-hidden transition-all duration-300 ${
                   space.isCorner
                     ? 'rounded-[2px] sm:rounded-lg border border-[#c5a059]/40 bg-slate-900 shadow-[inset_0_0_20px_rgba(197,160,89,0.1)]'
@@ -200,24 +200,24 @@ export default function Board({ board, onSpaceClick, sequences, selectedCard, my
                     <div className={`absolute inset-0 pointer-events-none opacity-50 mix-blend-multiply ${styles.pattern}`} />
                     <div className="absolute inset-0 p-1 flex flex-col justify-between z-10 bg-white/5 sm:bg-transparent">
                       <div className="flex justify-between items-start opacity-90">
-                        <span className={`text-[8px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`font-black leading-none text-[clamp(10px,2vw,14px)] ${getSuitColor(space.suit)}`}>
                           {space.rank}
                         </span>
-                        <span className={`text-[8px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`leading-none text-[clamp(10px,2vw,14px)] ${getSuitColor(space.suit)}`}>
                           {getSuitSymbol(space.suit)}
                         </span>
                       </div>
                      
                       <div className={`flex w-full items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity`}>
-                        <div className={`text-base sm:text-2xl md:text-3xl ${getSuitColor(space.suit)} ${styles.anim}`}>
+                        <div className={`text-[clamp(1rem,4vw,2rem)] ${getSuitColor(space.suit)} ${styles.anim}`}>
                           {getSuitSymbol(space.suit)}
                         </div>
                       </div>
                       <div className="flex justify-between items-end opacity-90 rotate-180">
-                        <span className={`text-[8px] font-black leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`font-black leading-none text-[clamp(10px,2vw,14px)] ${getSuitColor(space.suit)}`}>
                           {space.rank}
                         </span>
-                        <span className={`text-[8px] leading-none sm:text-[10px] ${getSuitColor(space.suit)}`}>
+                        <span className={`leading-none text-[clamp(10px,2vw,14px)] ${getSuitColor(space.suit)}`}>
                           {getSuitSymbol(space.suit)}
                         </span>
                       </div>
