@@ -126,7 +126,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
   );
 
   return (
-    <div className={`relative w-screen bg-[#030712] selection:bg-[#c5a059]/30 ${deviceMode === 'mobile' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen overflow-x-hidden'}`}>
+    <div className={`relative flex flex-col bg-[#030712] selection:bg-[#c5a059]/30 ${deviceMode === 'mobile' ? 'w-full h-full' : 'w-screen min-h-screen overflow-x-hidden'}`}>
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[30rem] h-[30rem] bg-gold-900/5 blur-[120px] rounded-full" />
@@ -172,7 +172,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
 
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
-      <div className={`relative z-10 mx-auto max-w-[1700px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-6 flex flex-col gap-2 sm:gap-4 ${deviceMode === 'mobile' ? 'h-[100dvh] overflow-hidden' : ''}`}>
+      <div className={`relative z-10 mx-auto max-w-[1700px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-6 flex flex-col gap-2 sm:gap-4 ${deviceMode === 'mobile' ? 'h-full flex-grow overflow-hidden' : ''}`}>
         {/* Compact Header HUD */}
         <header className="premium-panel rounded-xl sm:rounded-[2rem] p-2 sm:p-4 shrink-0">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4">
@@ -266,12 +266,15 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
                 </div>
               </div>
 
-             {/* Central Board Stage - Scales to fit remaining height but allows horizontal scroll if cramped */}
-            <section className="premium-panel-strong rounded-xl sm:rounded-[2rem] p-1 sm:p-2 lg:p-4 relative flex flex-col items-center justify-center min-h-0 flex-grow overflow-auto w-full pb-[calc(0.25rem+env(safe-area-inset-bottom))] sm:pb-2 lg:pb-4 hide-scrollbar">
+             {/* Central Board Stage - Squeeze to perfectly fit viewport */}
+            <section className="premium-panel-strong rounded-xl sm:rounded-[2rem] p-1 sm:p-2 lg:p-4 relative flex flex-col items-center justify-center min-h-0 flex-grow overflow-hidden w-full pb-[calc(0.25rem+env(safe-area-inset-bottom))] sm:pb-2 lg:pb-4">
               <div className="absolute top-0 right-0 p-1 sm:p-4 hidden sm:flex gap-1 z-10 pointer-events-none">
                 <span className="status-pill text-[6px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
               </div>
-             <div className="h-full aspect-square min-w-[440px] max-w-full max-h-[96vw] xl:max-h-full mx-auto flex shrink-0 items-center justify-center">
+             <div 
+               className="aspect-square w-full max-h-full max-w-full object-contain mx-auto flex shrink-0 items-center justify-center"
+               style={{ maxHeight: '100%', width: '100%' }}
+             >
                 <div className="w-full h-full">
                   <Board
                     board={gameState.board}
