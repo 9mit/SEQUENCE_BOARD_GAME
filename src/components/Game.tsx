@@ -213,7 +213,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
         </header>
 
          <main className={`flex-grow min-h-0 w-full ${deviceMode === 'mobile' ? 'overflow-hidden' : ''}`}>
-          <div className={`flex flex-col h-full gap-2 sm:gap-6 w-[100%] ${deviceMode === 'pc' ? 'xl:grid xl:grid-cols-[1fr_360px]' : 'xl:flex-row'}`}>
+          <div className={`flex flex-col h-full gap-2 sm:gap-6 w-[100%] ${deviceMode === 'pc' ? 'xl:grid xl:grid-cols-[1fr_360px]' : 'flex-col'}`}>
             <section className="flex flex-col gap-2 sm:gap-6 min-h-0 flex-grow w-full">
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_320px] shrink-0">
                <div className="premium-panel rounded-xl p-2 sm:p-4 lg:p-6 space-y-1 sm:space-y-4">
@@ -271,10 +271,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
               <div className="absolute top-0 right-0 p-1 sm:p-4 hidden sm:flex gap-1 z-10 pointer-events-none">
                 <span className="status-pill text-[6px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
               </div>
-             <div 
-               className="aspect-square w-full max-h-full max-w-full object-contain mx-auto flex shrink-0 items-center justify-center"
-               style={{ maxHeight: '100%', width: '100%' }}
-             >
+             <div className="h-full aspect-square w-full max-h-full max-w-full mx-auto flex shrink-0 items-center justify-center">
                 <div className="w-full h-full">
                   <Board
                     board={gameState.board}
@@ -296,8 +293,19 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
                     <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.4em] text-[#c5a059]">Strategic Reserve</span>
                     <h2 className="text-lg sm:text-xl font-display text-white">Command Hand</h2>
                   </div>
-                 <div className={`status-pill hidden sm:block ${myTeamStyle?.badge}`}>
-                    {capitalize(myPlayer.team)} Team Command
+                  <div className="flex gap-2 items-center">
+                    {(selectedDeadCard || hasPendingDraw) && (
+                      <button 
+                        onClick={selectedDeadCard ? handleDeadCard : handleDrawCard}
+                        className="button-primary sm:hidden px-3 py-1.5 gap-1 text-[10px]"
+                      >
+                        <RefreshCw size={10} className="animate-spin-slow" />
+                        {selectedDeadCard ? "Recycle" : "Draw"}
+                      </button>
+                    )}
+                    <div className={`status-pill hidden sm:block ${myTeamStyle?.badge}`}>
+                      {capitalize(myPlayer.team)} Team Command
+                    </div>
                   </div>
                 </div>
                 <Hand
