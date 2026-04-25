@@ -126,7 +126,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
   );
 
   return (
-    <div className={`relative flex flex-col bg-[#030712] selection:bg-[#c5a059]/30 ${deviceMode === 'mobile' ? 'w-full h-full' : 'w-screen min-h-screen overflow-x-hidden'}`}>
+    <div className={`relative flex flex-col bg-[#030712] selection:bg-[#c5a059]/30 w-full min-h-screen overflow-x-hidden`}>
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[30rem] h-[30rem] bg-gold-900/5 blur-[120px] rounded-full" />
@@ -172,7 +172,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
 
       <HowToPlay isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
-      <div className={`relative z-10 mx-auto max-w-[1700px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-6 flex flex-col gap-2 sm:gap-4 ${deviceMode === 'mobile' ? 'h-full flex-grow overflow-hidden' : ''}`}>
+      <div className={`relative z-10 mx-auto max-w-[1700px] w-full px-2 py-2 sm:px-4 sm:py-3 lg:px-6 flex flex-col gap-2 sm:gap-4 ${deviceMode === 'mobile' ? 'flex-grow' : ''}`}>
         {/* Compact Header HUD */}
         <header className="premium-panel rounded-xl sm:rounded-[2rem] p-2 sm:p-4 shrink-0">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4">
@@ -212,7 +212,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
          </div>
         </header>
 
-         <main className={`flex-grow min-h-0 w-full ${deviceMode === 'mobile' ? 'overflow-hidden' : ''}`}>
+         <main className={`flex-grow w-full`}>
           <div className={`flex flex-col h-full gap-2 sm:gap-6 w-[100%] ${deviceMode === 'pc' ? 'xl:grid xl:grid-cols-[1fr_360px]' : 'flex-col'}`}>
             <section className="flex flex-col gap-2 sm:gap-6 min-h-0 flex-grow w-full">
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_320px] shrink-0">
@@ -267,7 +267,7 @@ export default function Game({ socket, gameState, playerName, playerId, deviceMo
               </div>
 
              {/* Central Board Stage - Squeeze to perfectly fit viewport */}
-            <section className="premium-panel-strong rounded-xl sm:rounded-[2rem] p-1 sm:p-2 lg:p-4 relative flex flex-col items-center justify-center min-h-0 flex-grow overflow-hidden w-full pb-[calc(0.25rem+env(safe-area-inset-bottom))] sm:pb-2 lg:pb-4">
+             <section className="premium-panel-strong rounded-xl sm:rounded-[2rem] p-1 sm:p-2 lg:p-4 relative flex flex-col items-center justify-center flex-grow w-full pb-[calc(0.25rem+env(safe-area-inset-bottom))] sm:pb-2 lg:pb-4">
               <div className="absolute top-0 right-0 p-1 sm:p-4 hidden sm:flex gap-1 z-10 pointer-events-none">
                 <span className="status-pill text-[6px] sm:text-[8px] border-[#c5a059]/30 bg-amber-500/5 text-[#c5a059]">Optimal Synthesis</span>
               </div>

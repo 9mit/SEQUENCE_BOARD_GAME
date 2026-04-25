@@ -135,17 +135,16 @@
 
 @media (max-width: 768px) {
   html, body {
-    height: 100dvh;
+    min-height: 100dvh;
     margin: 0;
-    overflow: hidden;
-    touch-action: none;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   #root {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100dvh;
   }
 }
 
